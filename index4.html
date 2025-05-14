@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ mobileMenuOpen: false, dashboardOpen: false, darkMode: false }" :class="{ 'dark': darkMode }">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusTrade | Advanced Crypto Exchange</title>
+    <meta name="description" content="Professional cryptocurrency trading platform with advanced features">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: "#2563EB",
+                            dark: "#1E40AF"
+                        },
+                        secondary: {
+                            light: "#1E3A8A",
+                            dark: "#1E2875"
+                        },
+                        accent: {
+                            light: "#F59E0B",
+                            dark: "#D97706"
+                        },
+                        dark: {
+                            light: "#111827",
+                            dark: "#0B1120"
+                        },
+                        light: {
+                            light: "#F3F4F6",
+                            dark: "#E5E7EB"
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
+        }
+        .chart-container {
+            height: 400px;
+        }
+        .order-book {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .order-book::-webkit-scrollbar {
+            width: 4px;
+        }
+        .order-book::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 2px;
+        }
+        .price-change {
+            position: relative;
+            padding-left: 1rem;
+        }
+        .price-change::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+        }
+        .price-change.up::before {
+            background-color: #10B981;
+        }
+        .price-change.down::before {
+            background-color: #EF4444;
+        }
+        .tradingview-widget-container {
+            height: 100%;
+        }
+        .dark .dark\:bg-dark-800 {
+            background-color: #1F2937;
+        }
+        .dark .dark\:bg-dark-700 {
+            background-color: #374151;
+        }
+        .dark .dark\:text-light-100 {
+            color: #F9FAFB;
+        }
+        .dark .dark\:border-dark-600 {
+            border-color: #4B5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-dark-800 font-sans transition-colors duration-300">
+    <!-- Header/Navigation -->
+    <header class="bg-white dark:bg-dark-700 shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <nav class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <a href="#" class="text-2xl font-bold text-primary-light dark:text-primary-dark flex items-center">
+                        <span class="bg-primary-light dark:bg-primary-dark text-white p-1 rounded mr-2">
+                            <i class="fas fa-coins"></i>
+                        </span>
+                        NexusTrade
+                    </a>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Markets</a>
+                        <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Trade</a>
+                        <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Futures</a>
+                        <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Earn</a>
+                        <a href="#" class="text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Wallet</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button @click="darkMode = !darkMode" class="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-light dark:hover:text-primary-dark transition-colors">
+                        <i x-show="!darkMode" class="fas fa-moon"></i>
+                        <i x-show="darkMode" class="fas fa-sun"></i>
+                    </button>
+                    <button class="hidden md:block px-3 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-md hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">Log In</button>
+                    <button class="hidden md:block px-3 py-1 bg-accent-light dark:bg-accent-dark text-white rounded-md hover:bg-yellow-600 transition-colors">Register</button>
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </nav>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" @click.away="mobileMenuOpen = false" 
+             class="md:hidden bg-white dark:bg-dark-700 shadow-lg transition-all duration-300 ease-in-out" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            <div class="container mx-auto px-4 py-3 space-y-4">
+                <a href="#" class="block text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Markets</a>
+                <a href="#" class="block text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Trade</a>
+                <a href="#" class="block text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Futures</a>
+                <a href="#" class="block text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Earn</a>
+                <a href="#" class="block text-gray-700 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors">Wallet</a>
+                <div class="pt-2 space-y-2 border-t border-gray-200 dark:border-dark-600">
+                    <button class="w-full px-3 py-2 bg-primary-light dark:bg-primary-dark text-white rounded-md hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">Log In</button>
+                    <button class="w-full px-3 py-2 bg-accent-light dark:bg-accent-dark text-white rounded-md hover:bg-yellow-600 transition-colors">Register</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="gradient-bg text-white py-16">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-8 md:mb-0">
+                    <h1 class="text-4xl md:text-5xl font-bold mb-4">Trade Cryptocurrencies with Confidence</h1>
+                    <p class="text-xl mb-8 opacity-90">Advanced trading platform with institutional-grade tools for all traders</p>
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                        <button class="px-6 py-3 bg-white text-primary-light dark:text-primary-dark font-semibold rounded-md hover:bg-opacity-90 transition-all transform hover:scale-105">
+                            Start Trading Now
+                        </button>
+                        <button class="px-6 py-3 border-2 border-white text-white font-semibold rounded-md hover:bg-white hover:bg-opacity-10 transition-all transform hover:scale-105">
+                            Learn More
+                        </button>
+                    </div>
+                </div>
+                <div class="md:w-1/2 relative">
+                    <div class="relative max-w-md mx-auto">
+                        <div class="absolute -top-6 -left-6 w-32 h-32 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+                        <div class="absolute -bottom-8 -right-8 w-32 h-32 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+                        <div class="absolute top-20 -right-10 w-32 h-32 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+                        <div class="relative bg-white dark:bg-dark-700 rounded-xl shadow-2xl overflow-hidden">
+                            <div class="p-4 bg-gray-100 dark:bg-dark-600 flex justify-between items-center">
+                                <div class="flex items-center">
+                                    <img src="https://picsum.photos/32?random=1" alt="BTC" class="w-8 h-8 mr-2 rounded-full">
+                                    <span class="font-semibold">BTC/USDT</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold">$42,850.12</div>
+                                    <div class="text-green-500 text-sm">+2.45%</div>
+                                </div>
+                            </div>
+                            <div class="chart-container p-4">
+                                <canvas id="heroChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12">
+        <!-- Market Overview -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 text-center dark:text-white">Market Overview</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Market Card 1 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center mb-4">
+                        <img src="https://picsum.photos/32?random=1" alt="BTC" class="w-8 h-8 mr-3 rounded-full">
+                        <div>
+                            <h3 class="font-semibold dark:text-white">Bitcoin</h3>
+                            <span class="text-gray-500 dark:text-gray-400 text-sm">BTC/USDT</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-2xl font-bold dark:text-white">$42,850.12</p>
+                            <p class="price-change up text-green-500">+2.45%</p>
+                        </div>
+                        <div class="w-20 h-12">
+                            <canvas id="btcChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Market Card 2 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center mb-4">
+                        <img src="https://picsum.photos/32?random=2" alt="ETH" class="w-8 h-8 mr-3 rounded-full">
+                        <div>
+                            <h3 class="font-semibold dark:text-white">Ethereum</h3>
+                            <span class="text-gray-500 dark:text-gray-400 text-sm">ETH/USDT</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-2xl font-bold dark:text-white">$2,350.45</p>
+                            <p class="price-change down text-red-500">-1.23%</p>
+                        </div>
+                        <div class="w-20 h-12">
+                            <canvas id="ethChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Market Card 3 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center mb-4">
+                        <img src="https://picsum.photos/32?random=3" alt="BNB" class="w-8 h-8 mr-3 rounded-full">
+                        <div>
+                            <h3 class="font-semibold dark:text-white">BNB</h3>
+                            <span class="text-gray-500 dark:text-gray-400 text-sm">BNB/USDT</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-2xl font-bold dark:text-white">$305.67</p>
+                            <p class="price-change up text-green-500">+0.45%</p>
+                        </div>
+                        <div class="w-20 h-12">
+                            <canvas id="bnbChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Market Card 4 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center mb-4">
+                        <img src="https://picsum.photos/32?random=4" alt="SOL" class="w-8 h-8 mr-3 rounded-full">
+                        <div>
+                            <h3 class="font-semibold dark:text-white">Solana</h3>
+                            <span class="text-gray-500 dark:text-gray-400 text-sm">SOL/USDT</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-2xl font-bold dark:text-white">$102.34</p>
+                            <p class="price-change up text-green-500">+5.67%</p>
+                        </div>
+                        <div class="w-20 h-12">
+                            <canvas id="solChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trading Platform Section -->
+        <section class="mb-16">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Trading View -->
+                <div class="lg:w-2/3">
+                    <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md overflow-hidden">
+                        <div class="p-4 border-b border-gray-200 dark:border-dark-600 flex justify-between items-center">
+                            <div class="flex items-center">
+                                <img src="https://picsum.photos/24?random=3" alt="BTC" class="w-8 h-8 mr-2">
+                                <h2 class="text-xl font-bold dark:text-white">BTC/USDT</h2>
+                                <span class="ml-2 text-gray-500 dark:text-gray-400">Bitcoin / Tether</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold dark:text-white">$42,850.12</div>
+                                <div class="text-green-500">+2.45% (24h)</div>
+                            </div>
+                        </div>
+                        <div class="p-4 border-b border-gray-200 dark:border-dark-600 flex justify-between">
+                            <div class="flex space-x-2">
+                                <button class="px-3 py-1 bg-primary-light dark:bg-primary-dark text-white rounded">1D</button>
+                                <button class="px-3 py-1 bg-gray-100 dark:bg-dark-600 rounded">1W</button>
+                                <button class="px-3 py-1 bg-gray-100 dark:bg-dark-600 rounded">1M</button>
+                                <button class="px-3 py-1 bg-gray-100 dark:bg-dark-600 rounded">1Y</button>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="px-3 py-1 bg-gray-100 dark:bg-dark-600 rounded"><i class="fas fa-chart-line"></i></button>
+                                <button class="px-3 py-1 bg-gray-100 dark:bg-dark-600 rounded"><i class="fas fa-cog"></i></button>
+                                <button class="px-3 py-1 bg-gray-100 dark:bg-dark-600 rounded"><i class="fas fa-expand"></i></button>
+                            </div>
+                        </div>
+                        <div class="chart-container p-4">
+                            <canvas id="tradingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Form -->
+                <div class="lg:w-1/3">
+                    <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md overflow-hidden">
+                        <div class="flex border-b border-gray-200 dark:border-dark-600">
+                            <button class="flex-1 px-4 py-3 font-medium border-b-2 border-primary-light dark:border-primary-dark text-primary-light dark:text-primary-dark">Buy</button>
+                            <button class="flex-1 px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Sell</button>
+                        </div>
+                        <div class="p-4">
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-gray-700 dark:text-gray-300">Price (USDT)</label>
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">Market: $42,850.12</span>
+                                </div>
+                                <div class="relative">
+                                    <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-dark-600 border border-gray-200 dark:border-dark-500 rounded-md" value="42,850.12">
+                                    <span class="absolute right-3 top-3 text-gray-500 dark:text-gray-400">USDT</span>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-gray-700 dark:text-gray-300">Amount (BTC)</label>
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">Available: 0.1254 BTC</span>
+                                </div>
+                                <div class="relative">
+                                    <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-dark-600 border border-gray-200 dark:border-dark-500 rounded-md" placeholder="0.00">
+                                    <span class="absolute right-3 top-3 text-gray-500 dark:text-gray-400">BTC</span>
+                                </div>
+                                <div class="flex justify-between mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    <span>0%</span>
+                                    <span>25%</span>
+                                    <span>50%</span>
+                                    <span>75%</span>
+                                    <span>100%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-dark-600 rounded-full h-1.5 mt-1">
+                                    <div class="bg-primary-light dark:bg-primary-dark h-1.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-gray-700 dark:text-gray-300 mb-2">Total (USDT)</label>
+                                <div class="relative">
+                                    <input type="text" class="w-full px-4 py-3 bg-gray-50 dark:bg-dark-600 border border-gray-200 dark:border-dark-500 rounded-md" placeholder="0.00" readonly>
+                                    <span class="absolute right-3 top-3 text-gray-500 dark:text-gray-400">USDT</span>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-primary-light dark:bg-primary-dark text-white rounded-md hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors font-semibold">
+                                Buy BTC
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-12 text-center dark:text-white">Why Choose NexusTrade</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-shield-alt text-blue-500 dark:text-blue-300 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">Secure Platform</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Multi-layered security with cold storage, 2FA, and institutional-grade encryption to protect your assets.</p>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-bolt text-green-500 dark:text-green-300 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">Lightning Fast</h3>
+                    <p class="text-gray-600 dark:text-gray-300">High-performance matching engine capable of processing 1.4 million orders per second with sub-5ms latency.</p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-chart-line text-purple-500 dark:text-purple-300 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">Advanced Trading</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Professional charting tools, derivatives, margin trading, and algorithmic trading options.</p>
+                </div>
+                
+                <!-- Feature 4 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-globe text-yellow-500 dark:text-yellow-300 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">Global Liquidity</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Access to deep liquidity pools across 500+ trading pairs with tight spreads.</p>
+                </div>
+                
+                <!-- Feature 5 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-headset text-red-500 dark:text-red-300 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">24/7 Support</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Dedicated customer support available around the clock via live chat, email, and phone.</p>
+                </div>
+                
+                <!-- Feature 6 -->
+                <div class="bg-white dark:bg-dark-700 rounded-xl shadow-md p-6 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-wallet text-indigo-500 dark:text-indigo-300 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">Earn Rewards</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Staking, lending, and other yield-generating opportunities to grow your crypto holdings.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="gradient-bg rounded-2xl p-8 md:p-12 text-center text-white mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">Ready to Start Trading?</h2>
+            <p class="text-xl mb-8 max-w-2xl mx-auto opacity-90">Join millions of users trading on the most advanced cryptocurrency exchange platform.</p>
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+                <button class="px-8 py-4 bg-white text-primary-light dark:text-primary-dark font-semibold rounded-lg hover:bg-opacity-90 transition-all transform hover:scale-105">
+                    Create Free Account
+                </button>
+                <button class="px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:bg-opacity-10 transition-all transform hover:scale-105">
+                    Explore Markets
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 dark:bg-dark-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 flex items-center">
+                        <span class="bg-primary-light dark:bg-primary-dark text-white p-1 rounded mr-2">
+                            <i class="fas fa-coins"></i>
+                        </span>
+                        NexusTrade
+                    </h3>
+                    <p class="text-gray-400 mb-4">The world's leading cryptocurrency exchange platform.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-telegram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-discord"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-medium"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Products</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Exchange</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Futures</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Margin Trading</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Earn</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Wallet</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">API</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Trading Bots</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">OTC</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Institutional</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Listing</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Support</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Fees</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Security</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Legal</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 mb-4 md:mb-0">© 2023 NexusTrade. All rights reserved.</p>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">Terms</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">Privacy</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">Cookies</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- TradingView Widget Script -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    
+    <script>
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hero Chart
+            const heroCtx = document.getElementById('heroChart').getContext('2d');
+            const heroChart = new Chart(heroCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 30}, (_, i) => i + 1),
+                    datasets: [{
+                        label: 'BTC Price',
+                        data: Array.from({length: 30}, () => Math.floor(Math.random() * 1000) + 42000),
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            display: false
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 0
+                        }
+                    }
+                }
+            });
+
+            // Market Cards Charts
+            const createMiniChart = (id, color) => {
+                const ctx = document.getElementById(id).getContext('2d');
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: 7}, (_, i) => i + 1),
+                        datasets: [{
+                            data: Array.from({length: 7}, () => Math.floor(Math.random() * 20) + 80),
+                            borderColor: color,
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                display: false
+                            }
+                        },
+                        elements: {
+                            point: {
+                                radius: 0
+                            }
+                        }
+                    }
+                });
+            };
+
+            createMiniChart('btcChart', '#10B981');
+            createMiniChart('ethChart', '#EF4444');
+            createMiniChart('bnbChart', '#10B981');
+            createMiniChart('solChart', '#10B981');
+
+            // Trading Chart
+            const tradingCtx = document.getElementById('tradingChart').getContext('2d');
+            const tradingChart = new Chart(tradingCtx, {
+                type: 'candlestick',
+                data: {
+                    labels: Array.from({length: 20}, (_, i) => i + 1),
+                    datasets: [{
+                        label: 'BTC/USDT',
+                        data: Array.from({length: 20}, () => ({
+                            o: Math.floor(Math.random() * 100) + 42400,
+                            h: Math.floor(Math.random() * 100) + 42500,
+                            l: Math.floor(Math.random() * 100) + 42300,
+                            c: Math.floor(Math.random() * 100) + 42450
+                        })),
+                        color: {
+                            up: '#10B981',
+                            down: '#EF4444',
+                            unchanged: '#9CA3AF',
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // TradingView Widget
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": "BINANCE:BTCUSDT",
+                "interval": "D",
+                "timezone": "Etc/UTC",
+                "theme": "light",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#f1f3f6",
+                "enable_publishing": false,
+                "hide_top_toolbar": true,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "container_id": "tradingview-widget-container"
+            });
+        });
+
+        // Slider functionality for order amount
+        const amountInput = document.querySelector('input[placeholder="0.00"]');
+        const slider = document.querySelector('.bg-gray-200');
+        const sliderFill = document.querySelector('.bg-primary-light');
+
+        if (amountInput && slider && sliderFill) {
+            amountInput.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value) || 0;
+                const max = 0.1254; // Available BTC
+                const percentage = Math.min((value / max) * 100, 100);
+                sliderFill.style.width = `${percentage}%`;
+            });
+        }
+    </script>
+</body>
+</html>
